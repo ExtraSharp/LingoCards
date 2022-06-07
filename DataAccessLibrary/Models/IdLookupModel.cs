@@ -6,10 +6,8 @@ using System.Threading.Tasks;
 
 namespace DataAccessLibrary.Models
 {
-    public class Flashcard
+    public class IdLookupModel
     {
-        public string TargetWord { get; set; }
-        public string Translation { get; set; }
-        public int DeckId { get; set; }
+        public int Id { get; set; }
     }
 }
