@@ -174,6 +174,7 @@ static bool Train(FlashcardModel card)
     if (answer == card.Translation)
     {
         Console.WriteLine("Correct!");
+        Console.WriteLine();
         Console.ReadLine();
         return true;
     }
