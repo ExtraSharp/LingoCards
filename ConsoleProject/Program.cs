@@ -1,19 +1,28 @@
 ﻿// See https://aka.ms/new-console-template for more information
 
+using ConsoleProject;
 using DataAccessLibrary;
 using DataAccessLibrary.Models;
 using Microsoft.Extensions.Configuration;
 using System.Diagnostics.Metrics;
-DeckModel deck = new DeckModel();
+
+DeckModel deck = new DeckModel()
+{
+    Name = "none"
+};
+
 DisplayMainMenu(deck);
 Console.ReadLine();
 
-static Flashcard CreateFlashcard(DeckModel deck)
+static FlashcardModel CreateFlashcard(DeckModel deck)
 {
-    Flashcard flashcard = new Flashcard();
+    FlashcardModel flashcard = new FlashcardModel();
     flashcard.DeckId = deck.Id;
 
-    DisplayFlashcardHeader();    
+    DisplayFlashcardHeader();
+
+    Console.WriteLine($"Selected deck: " + deck.Name);
+    Console.WriteLine();
 
     Console.WriteLine("New word or phrase: ");
     flashcard.TargetWord = Console.ReadLine();
@@ -62,12 +71,12 @@ static void DisplayFlashcardHeader()
     Console.WriteLine();
 }
 
-static void DisplayFlashcard(Flashcard flashcard)
+static void DisplayFlashcard(FlashcardModel flashcard)
 {
     Console.Clear();    
 }
 
-static void SaveFlashcard(Flashcard flashcard)
+static void SaveFlashcard(FlashcardModel flashcard)
 {
     SqliteCrud sql = new SqliteCrud(GetConnectionString());    
     sql.CreateFlashcard(flashcard);     
@@ -104,34 +113,102 @@ static void DisplayFlashcardMenu(DeckModel deck)
 
 static void DisplayMainMenu(DeckModel deck)
 {
+    List<MenuItem> menuItems = new List<MenuItem>();
+
+    menuItems.Add(new MenuItem { Name = "Create new deck", IsActive = true, Selected = () => CreateDeck(deck) });
+    menuItems.Add(new MenuItem { Name = "Select deck", IsActive = true, Selected = () => SelectDeck(deck) });
+    if (deck.Name != "none")
+    {
+        menuItems.Add(new MenuItem { Name = "Create new flashcard", IsActive = true, Selected = () => CreateFlashcard(deck) });
+        menuItems.Add(new MenuItem { Name = "Training", IsActive = true, Selected = () => LoadTrainingDeck(deck) });
+    }
+    
     Console.Clear();
     Console.WriteLine();
-    Console.WriteLine("[1] Create new deck");
-    Console.WriteLine($"[2] Select Deck (currently selected: " + deck.Name + ")");
-    Console.WriteLine("[3] Create new flashcard");
+
+    int counter = 1;
+
+    foreach (MenuItem item in menuItems)
+    {
+        item.Display(counter);
+        counter += 1;
+    }
     
     string choice = Console.ReadLine();
 
-    switch (choice)
+    menuItems[int.Parse(choice) - 1].Selected();
+}
+
+static void LoadTrainingDeck(DeckModel deck)
+{
+    Console.Write("Number of cards to train: ");
+    string choice = Console.ReadLine();
+
+    List<FlashcardModel> cardsToTrain = LoadDeck(deck).Take(int.Parse(choice)).ToList();
+
+    int correctAnswers = 0;
+
+    foreach (var card in cardsToTrain)
     {
-        case "1":
-            CreateDeck(deck);
-            break;
-        case "2":
-            SelectDeck(deck);
-            break;
-        case "3":
-            CreateFlashcard(deck);
-            break;
-        default:
-            Console.WriteLine("Invalid selection. Please try again");
-            DisplayMainMenu(deck);
-            break;
-    }    
+        bool isCorrect = Train(card);
+        if (isCorrect == true)
+        {
+            correctAnswers += 1;
+        }
+    }
+    Console.WriteLine($"Correct answers: { correctAnswers.ToString()} / { cardsToTrain.Count() }");
+    Console.WriteLine();
+    Console.WriteLine("Press any key to return to main menu");
+    Console.ReadLine();
+    DisplayMainMenu(deck);
+}
+
+static bool Train(FlashcardModel card)
+{
+    Console.Clear();
+    Console.WriteLine(card.TargetWord);
+    Console.WriteLine();
+    Console.Write("Your answer: ");
+    string answer = Console.ReadLine();
+
+    if (answer == card.Translation)
+    {
+        Console.WriteLine("Correct!");
+        Console.ReadLine();
+        return true;
+    }
+    else
+    {
+        Console.WriteLine($"Wrong. Correct answer: { card.Translation }");
+        Console.ReadLine();
+        return false;
+    }
+}
+
+static List<FlashcardModel> LoadDeck(DeckModel deck)
+{
+    SqliteCrud sql = new SqliteCrud(GetConnectionString());
+
+    List<int> flashcardIds = sql.ReadFlashcardIdsByDeckId(deck.Id);
+
+    List<FlashcardModel> output = new List<FlashcardModel>();
+
+    foreach (var f in flashcardIds)
+    {
+        FlashcardModel card = new();
+        card = sql.ReadCardByCardId(f);
+        output.Add(card);
+    }
+
+    return output;
 }
 
 static void SelectDeck(DeckModel deck)
 {
+    Console.Clear();
+    Console.WriteLine();
+    Console.WriteLine("Select a card deck");
+    
     SqliteCrud sql = new SqliteCrud(GetConnectionString());
     List<DeckModel> allDecks = sql.ReadAllDecks();
 

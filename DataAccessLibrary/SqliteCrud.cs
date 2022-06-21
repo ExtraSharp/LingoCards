@@ -17,7 +17,7 @@ namespace DataAccessLibrary
             _connectionString = connectionString;
         }
 
-        public void CreateFlashcard(Flashcard flashcard)
+        public void CreateFlashcard(FlashcardModel flashcard)
         {
             string sql = "insert into Flashcards (TargetWord, Translation) values (@TargetWord, @Translation)";
 
@@ -42,6 +42,21 @@ namespace DataAccessLibrary
             string sql = "select Id, Name from Decks";
 
             return db.LoadData<DeckModel, dynamic>(sql, new { }, _connectionString);
+        }
+
+        public List<int> ReadFlashcardIdsByDeckId(int deckId)
+        {
+            string sql = "select FlashcardId from FlashcardDeck where DeckId = @DeckId";
+
+            return db.LoadData<int, dynamic>(sql, new { DeckId = deckId }, _connectionString);
+        }
+
+
+        public FlashcardModel ReadCardByCardId(int cardId)
+        {
+            string sql = "select TargetWord, Translation from Flashcards where Id = @Id";
+
+            return db.LoadData<FlashcardModel, dynamic>(sql, new { Id = cardId }, _connectionString).FirstOrDefault();
         }
 
         public DeckModel ReadDeckByName(string name)
