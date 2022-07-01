@@ -11,5 +11,6 @@ namespace DataAccessLibrary.Models
         public string TargetWord { get; set; }
         public string Translation { get; set; }
         public int DeckId { get; set; }
+        
     }
 }

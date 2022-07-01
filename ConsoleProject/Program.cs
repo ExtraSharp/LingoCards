@@ -1,5 +1,4 @@
-﻿// See https://aka.ms/new-console-template for more information
-
+﻿
 using ConsoleProject;
 using DataAccessLibrary;
 using DataAccessLibrary.Models;
@@ -11,6 +10,7 @@ DeckModel deck = new DeckModel()
     Name = "none"
 };
 
+DisplayHeaders.Welcome();
 DisplayMainMenu(deck);
 Console.ReadLine();
 
@@ -19,7 +19,7 @@ static FlashcardModel CreateFlashcard(DeckModel deck)
     FlashcardModel flashcard = new FlashcardModel();
     flashcard.DeckId = deck.Id;
 
-    DisplayFlashcardHeader();
+    DisplayHeaders.CreateFlashcard();
 
     Console.WriteLine($"Selected deck: " + deck.Name);
     Console.WriteLine();
@@ -46,6 +46,8 @@ static FlashcardModel CreateFlashcard(DeckModel deck)
 
 static void CreateDeck(DeckModel deck)
 {
+    DisplayHeaders.CreateDeck();
+    
     Console.Write("Name of new deck: ");
     string name = Console.ReadLine();
 
@@ -61,30 +63,15 @@ static void CreateDeck(DeckModel deck)
     }   
 }
 
-static void DisplayFlashcardHeader()
-{
-    Console.Clear();
-    Console.WriteLine();
-    Console.WriteLine("=============================================");
-    Console.WriteLine("===========Create new flashcard==============");
-    Console.WriteLine("=============================================");
-    Console.WriteLine();
-}
-
-static void DisplayFlashcard(FlashcardModel flashcard)
-{
-    Console.Clear();    
-}
-
 static void SaveFlashcard(FlashcardModel flashcard)
 {
-    SqliteCrud sql = new SqliteCrud(GetConnectionString());    
+    SqliteCrud sql = new SqliteCrud(GlobalConfig.GetConnectionString());    
     sql.CreateFlashcard(flashcard);     
 }
 
 static void SaveDeck(string name)
 {
-    SqliteCrud sql = new SqliteCrud(GetConnectionString());
+    SqliteCrud sql = new SqliteCrud(GlobalConfig.GetConnectionString());
     sql.CreateDeck(name);
 }
 
@@ -188,7 +175,7 @@ static bool Train(FlashcardModel card)
 
 static List<FlashcardModel> LoadDeck(DeckModel deck)
 {
-    SqliteCrud sql = new SqliteCrud(GetConnectionString());
+    SqliteCrud sql = new SqliteCrud(GlobalConfig.GetConnectionString());
 
     List<int> flashcardIds = sql.ReadFlashcardIdsByDeckId(deck.Id);
 
@@ -209,8 +196,8 @@ static void SelectDeck(DeckModel deck)
     Console.Clear();
     Console.WriteLine();
     Console.WriteLine("Select a card deck");
-    
-    SqliteCrud sql = new SqliteCrud(GetConnectionString());
+
+    SqliteCrud sql = new SqliteCrud(GlobalConfig.GetConnectionString());
     List<DeckModel> allDecks = sql.ReadAllDecks();
 
     int i = 1;
@@ -231,22 +218,8 @@ static void SelectDeck(DeckModel deck)
 
 static DeckModel LookupDeck(string deck)
 {
-    SqliteCrud sql = new SqliteCrud(GetConnectionString());
+    SqliteCrud sql = new SqliteCrud(GlobalConfig.GetConnectionString());
 
     return sql.ReadDeckByName(deck);
 }
 
-static string GetConnectionString(string connectionStringName ="Default")
-{
-    string output = "";
-
-    var builder = new ConfigurationBuilder()
-        .SetBasePath(Directory.GetCurrentDirectory())
-        .AddJsonFile("appsettings.json");
-
-    var config = builder.Build();
-
-    output = config.GetConnectionString(connectionStringName);
-
-    return output;
-}
